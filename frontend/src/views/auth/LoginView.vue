@@ -1,0 +1,20 @@
+<template>
+  <div>
+    <h1>Bienvenido</h1>
+    <button @click="loginConGoogle">Iniciar sesión con Google</button>
+  </div>
+</template>
+
+<script setup>
+import { supabase } from '../../lib/supabase'
+
+async function loginConGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  })
+  if (error) console.error(error.message)
+}
+</script>
