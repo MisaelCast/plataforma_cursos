@@ -1,0 +1,928 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+frontend/
+  .vscode/
+    extensions.json
+  public/
+    favicon.ico
+  src/
+    lib/
+      supabase.js
+    router/
+      index.js
+    stores/
+      counter.js
+    views/
+      auth/
+        CallbackView.vue
+        LoginView.vue
+    App.vue
+    main.js
+  .editorconfig
+  .gitattributes
+  .gitignore
+  .oxlintrc.json
+  .prettierrc.json
+  eslint.config.js
+  index.html
+  jsconfig.json
+  package.json
+  README.md
+  vite.config.js
+supabase/
+  policies.sql
+  schema.sql
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="frontend/.vscode/extensions.json">
+{
+  "recommendations": [
+    "Vue.volar",
+    "dbaeumer.vscode-eslint",
+    "EditorConfig.EditorConfig",
+    "oxc.oxc-vscode",
+    "esbenp.prettier-vscode"
+  ]
+}
+</file>
+
+<file path="frontend/src/lib/supabase.js">
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+</file>
+
+<file path="frontend/src/router/index.js">
+import { createRouter, createWebHistory } from 'vue-router'
+import LoginView from '../views/auth/LoginView.vue'
+import CallbackView from '../views/auth/CallbackView.vue'
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginView
+    },
+    {
+      path: '/auth/callback',
+      name: 'callback',
+      component: CallbackView
+    }
+  ]
+})
+
+export default router
+</file>
+
+<file path="frontend/src/stores/counter.js">
+import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+
+export const useCounterStore = defineStore('counter', () => {
+  const count = ref(0)
+  const doubleCount = computed(() => count.value * 2)
+  function increment() {
+    count.value++
+  }
+
+  return { count, doubleCount, increment }
+})
+</file>
+
+<file path="frontend/src/views/auth/CallbackView.vue">
+<template>
+  <div>
+    <p>Cargando...</p>
+  </div>
+</template>
+
+<script setup>
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { supabase } from '../../lib/supabase'
+
+const router = useRouter()
+
+onMounted(async () => {
+  const { data, error } = await supabase.auth.getSession()
+
+  if (data?.session) {
+    router.push('/')
+  } else {
+    // Espera a que Supabase procese el token del hash
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        router.push('/')
+      } else {
+        router.push('/login')
+      }
+    })
+  }
+})
+</script>
+</file>
+
+<file path="frontend/src/views/auth/LoginView.vue">
+<template>
+  <div>
+    <h1>Bienvenido</h1>
+    <button @click="loginConGoogle">Iniciar sesión con Google</button>
+  </div>
+</template>
+
+<script setup>
+import { supabase } from '../../lib/supabase'
+
+async function loginConGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`
+    }
+  })
+  if (error) console.error(error.message)
+}
+</script>
+</file>
+
+<file path="frontend/src/App.vue">
+<template>
+  <RouterView />
+</template>
+
+<script setup>
+import { supabase } from './lib/supabase'
+import { onMounted } from 'vue'
+import { RouterView } from 'vue-router'
+
+onMounted(async () => {
+  const { data, error } = await supabase.from('profiles').select('*')
+  if (error) {
+    console.error('Error:', error.message)
+  } else {
+    console.log('Conexión exitosa:', data)
+  }
+})
+</script>
+</file>
+
+<file path="frontend/src/main.js">
+import { createApp } from 'vue'
+import { createPinia } from 'pinia'
+import App from './App.vue'
+import router from './router'
+
+const app = createApp(App)
+
+app.use(createPinia())
+app.use(router)
+
+app.mount('#app')
+</file>
+
+<file path="frontend/.editorconfig">
+[*.{js,jsx,mjs,cjs,ts,tsx,mts,cts,vue,css,scss,sass,less,styl}]
+charset = utf-8
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+end_of_line = lf
+max_line_length = 100
+</file>
+
+<file path="frontend/.gitattributes">
+* text=auto eol=lf
+</file>
+
+<file path="frontend/.gitignore">
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.tsbuildinfo
+
+.eslintcache
+
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
+
+# Vitest
+__screenshots__/
+
+# Vite
+*.timestamp-*-*.mjs
+
+# .env files
+.env
+</file>
+
+<file path="frontend/.oxlintrc.json">
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "unicorn", "oxc", "vue"],
+  "env": {
+    "browser": true
+  },
+  "categories": {
+    "correctness": "error"
+  }
+}
+</file>
+
+<file path="frontend/.prettierrc.json">
+{
+  "$schema": "https://json.schemastore.org/prettierrc",
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 100
+}
+</file>
+
+<file path="frontend/eslint.config.js">
+import { defineConfig, globalIgnores } from 'eslint/config'
+import globals from 'globals'
+import js from '@eslint/js'
+import pluginVue from 'eslint-plugin-vue'
+import pluginOxlint from 'eslint-plugin-oxlint'
+import skipFormatting from 'eslint-config-prettier/flat'
+
+export default defineConfig([
+  {
+    name: 'app/files-to-lint',
+    files: ['**/*.{vue,js,mjs,jsx}'],
+  },
+
+  globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),
+
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+    },
+  },
+
+  js.configs.recommended,
+  ...pluginVue.configs['flat/essential'],
+
+  ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
+
+  skipFormatting,
+])
+</file>
+
+<file path="frontend/index.html">
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vite App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+</file>
+
+<file path="frontend/jsconfig.json">
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
+</file>
+
+<file path="frontend/package.json">
+{
+  "name": "frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "run-s lint:*",
+    "lint:oxlint": "oxlint . --fix",
+    "lint:eslint": "eslint . --fix --cache",
+    "format": "prettier --write --experimental-cli src/"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.28",
+    "vue-router": "^5.0.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@vitejs/plugin-vue": "^6.0.4",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-oxlint": "~1.46.0",
+    "eslint-plugin-vue": "~10.8.0",
+    "globals": "^17.3.0",
+    "npm-run-all2": "^8.0.4",
+    "oxlint": "~1.47.0",
+    "prettier": "3.8.1",
+    "vite": "^7.3.1",
+    "vite-plugin-vue-devtools": "^8.0.6"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}
+</file>
+
+<file path="frontend/README.md">
+# frontend
+
+This template should help get you started developing with Vue 3 in Vite.
+
+## Recommended IDE Setup
+
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+
+## Recommended Browser Setup
+
+- Chromium-based browsers (Chrome, Edge, Brave, etc.):
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
+- Firefox:
+  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+
+## Customize configuration
+
+See [Vite Configuration Reference](https://vite.dev/config/).
+
+## Project Setup
+
+```sh
+npm install
+```
+
+### Compile and Hot-Reload for Development
+
+```sh
+npm run dev
+```
+
+### Compile and Minify for Production
+
+```sh
+npm run build
+```
+
+### Lint with [ESLint](https://eslint.org/)
+
+```sh
+npm run lint
+```
+</file>
+
+<file path="frontend/vite.config.js">
+import { fileURLToPath, URL } from 'node:url'
+
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    vue(),
+    vueDevTools(),
+  ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    },
+  },
+})
+</file>
+
+<file path="supabase/policies.sql">
+-- ============================================================
+-- PLATAFORMA DE CURSOS — policies.sql
+-- Ejecutar en: Supabase → SQL Editor
+-- IMPORTANTE: Ejecutar DESPUÉS de schema.sql
+-- ============================================================
+
+
+-- ─────────────────────────────────────────
+-- Habilitar RLS en todas las tablas
+-- Sin esto cualquier usuario podría leer/modificar
+-- datos de otros directamente desde el cliente
+-- ─────────────────────────────────────────
+ALTER TABLE profiles        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE courses         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sections        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lessons         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resources       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE enrollments     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lesson_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notes           ENABLE ROW LEVEL SECURITY;
+
+
+-- ─────────────────────────────────────────
+-- Helper: devuelve el rol del usuario actual
+-- Retorna 'anonymous' si no existe el perfil
+-- para evitar comparaciones inesperadas con NULL
+-- ─────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT COALESCE(
+    (SELECT role FROM public.profiles WHERE id = auth.uid()),
+    'anonymous'
+  );
+$$;
+
+
+-- ════════════════════════════════════════
+-- PROFILES
+-- ════════════════════════════════════════
+
+-- El usuario solo puede ver su propio perfil (admin ve todos)
+CREATE POLICY "profiles: ver propio perfil"
+ON profiles FOR SELECT TO authenticated
+USING (id = auth.uid() OR get_my_role() = 'admin');
+
+-- El usuario solo puede editar su propio perfil
+CREATE POLICY "profiles: editar propio perfil"
+ON profiles FOR UPDATE TO authenticated
+USING (id = auth.uid())
+WITH CHECK (id = auth.uid());
+
+
+-- ════════════════════════════════════════
+-- CATEGORIES
+-- ════════════════════════════════════════
+
+-- Cualquiera (incluso visitantes sin login) puede ver categorías
+CREATE POLICY "categories: lectura pública"
+ON categories FOR SELECT
+USING (TRUE);
+
+-- Solo admin puede crear, editar o eliminar categorías
+CREATE POLICY "categories: escritura solo admin"
+ON categories FOR ALL TO authenticated
+USING (get_my_role() = 'admin')
+WITH CHECK (get_my_role() = 'admin');
+
+
+-- ════════════════════════════════════════
+-- COURSES
+-- ════════════════════════════════════════
+
+-- Visitantes ven cursos publicados; admin ve todos (incluso no publicados)
+CREATE POLICY "courses: lectura pública de publicados"
+ON courses FOR SELECT
+USING (is_published = TRUE OR get_my_role() = 'admin');
+
+-- Solo admin puede crear, editar o eliminar cursos
+CREATE POLICY "courses: escritura solo admin"
+ON courses FOR ALL TO authenticated
+USING (get_my_role() = 'admin')
+WITH CHECK (get_my_role() = 'admin');
+
+
+-- ════════════════════════════════════════
+-- SECTIONS
+-- ════════════════════════════════════════
+
+-- Secciones visibles si el curso está publicado o el usuario es admin
+CREATE POLICY "sections: lectura si curso publicado"
+ON sections FOR SELECT
+USING (
+  get_my_role() = 'admin'
+  OR EXISTS (
+    SELECT 1 FROM courses c
+    WHERE c.id = sections.course_id AND c.is_published = TRUE
+  )
+);
+
+-- Solo admin puede gestionar secciones
+CREATE POLICY "sections: escritura solo admin"
+ON sections FOR ALL TO authenticated
+USING (get_my_role() = 'admin')
+WITH CHECK (get_my_role() = 'admin');
+
+
+-- ════════════════════════════════════════
+-- LESSONS
+-- ════════════════════════════════════════
+
+-- Lección visible si:
+--   1. El usuario es admin
+--   2. La lección es preview (cualquier visitante puede verla)
+--   3. El usuario está inscrito en el curso de esa lección
+CREATE POLICY "lessons: lectura por inscripción o preview"
+ON lessons FOR SELECT
+USING (
+  get_my_role() = 'admin'
+  OR is_preview = TRUE
+  OR EXISTS (
+    SELECT 1 FROM enrollments e
+    JOIN sections s ON s.id = lessons.section_id
+    WHERE e.user_id = auth.uid() AND e.course_id = s.course_id
+  )
+);
+
+-- Solo admin puede gestionar lecciones
+CREATE POLICY "lessons: escritura solo admin"
+ON lessons FOR ALL TO authenticated
+USING (get_my_role() = 'admin')
+WITH CHECK (get_my_role() = 'admin');
+
+
+-- ════════════════════════════════════════
+-- RESOURCES
+-- ════════════════════════════════════════
+
+-- Recursos visibles solo para usuarios inscritos en el curso o admin
+CREATE POLICY "resources: lectura por inscripción"
+ON resources FOR SELECT TO authenticated
+USING (
+  get_my_role() = 'admin'
+  OR EXISTS (
+    SELECT 1 FROM enrollments e
+    JOIN lessons l  ON l.id = resources.lesson_id
+    JOIN sections s ON s.id = l.section_id
+    WHERE e.user_id = auth.uid() AND e.course_id = s.course_id
+  )
+);
+
+-- Solo admin puede gestionar recursos
+CREATE POLICY "resources: escritura solo admin"
+ON resources FOR ALL TO authenticated
+USING (get_my_role() = 'admin')
+WITH CHECK (get_my_role() = 'admin');
+
+
+-- ════════════════════════════════════════
+-- ENROLLMENTS
+-- ════════════════════════════════════════
+
+-- Cada usuario solo ve sus propias inscripciones (admin ve todas)
+CREATE POLICY "enrollments: ver propias"
+ON enrollments FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR get_my_role() = 'admin');
+
+-- Un usuario autenticado puede inscribirse (solo a sí mismo, no a otros)
+CREATE POLICY "enrollments: inscribirse"
+ON enrollments FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+-- Un usuario puede cancelar su propia inscripción
+CREATE POLICY "enrollments: cancelar propia"
+ON enrollments FOR DELETE TO authenticated
+USING (user_id = auth.uid());
+
+
+-- ════════════════════════════════════════
+-- LESSON PROGRESS
+-- ════════════════════════════════════════
+
+-- Cada usuario solo ve su propio progreso (admin ve todo)
+CREATE POLICY "lesson_progress: ver propio"
+ON lesson_progress FOR SELECT TO authenticated
+USING (user_id = auth.uid() OR get_my_role() = 'admin');
+
+-- Un usuario solo puede insertar su propio progreso
+CREATE POLICY "lesson_progress: insertar propio"
+ON lesson_progress FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+-- Un usuario solo puede actualizar su propio progreso
+CREATE POLICY "lesson_progress: actualizar propio"
+ON lesson_progress FOR UPDATE TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+
+-- ════════════════════════════════════════
+-- NOTES
+-- ════════════════════════════════════════
+
+-- Cada usuario solo ve sus propias notas
+CREATE POLICY "notes: ver propias"
+ON notes FOR SELECT TO authenticated
+USING (user_id = auth.uid());
+
+-- Un usuario solo puede crear notas propias
+CREATE POLICY "notes: crear propia"
+ON notes FOR INSERT TO authenticated
+WITH CHECK (user_id = auth.uid());
+
+-- Un usuario solo puede editar sus propias notas
+CREATE POLICY "notes: editar propia"
+ON notes FOR UPDATE TO authenticated
+USING (user_id = auth.uid())
+WITH CHECK (user_id = auth.uid());
+
+-- Un usuario solo puede eliminar sus propias notas
+CREATE POLICY "notes: eliminar propia"
+ON notes FOR DELETE TO authenticated
+USING (user_id = auth.uid());
+</file>
+
+<file path="supabase/schema.sql">
+-- ============================================================
+-- PLATAFORMA DE CURSOS — schema.sql
+-- Ejecutar en: Supabase → SQL Editor
+-- ============================================================
+
+
+-- ─────────────────────────────────────────
+-- 1. PROFILES
+-- No se crea tabla users propia.
+-- Supabase ya tiene auth.users internamente.
+-- profiles se enlaza a auth.users mediante FK.
+-- ─────────────────────────────────────────
+CREATE TABLE profiles (
+  id          UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name   TEXT,
+  avatar_url  TEXT,
+  role        TEXT        NOT NULL DEFAULT 'student' CHECK (role IN ('admin', 'student')),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Función: crea el profile automáticamente cuando alguien se registra
+-- SET search_path = public → fuerza el esquema correcto (seguridad)
+-- SECURITY DEFINER → corre con permisos del propietario, no del usuario
+-- ON CONFLICT DO NOTHING → evita errores si el perfil ya existe
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, avatar_url)
+  VALUES (
+    NEW.id,
+    -- Soporta raw_user_meta_data (OAuth) y user_metadata (email/pass)
+    COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.user_metadata->>'full_name',
+      NEW.email
+    ),
+    COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.user_metadata->>'avatar_url',
+      NULL
+    )
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+-- El owner debe ser postgres para que pueda insertar en profiles con RLS activo
+ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
+
+-- Trigger: se dispara después de cada nuevo registro en auth.users
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+
+-- ─────────────────────────────────────────
+-- Función reutilizable para updated_at
+-- Se usa en courses, lessons y lesson_progress
+-- ─────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.update_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+
+-- ─────────────────────────────────────────
+-- 2. CATEGORIES
+-- ─────────────────────────────────────────
+CREATE TABLE categories (
+  id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name  TEXT NOT NULL,
+  slug  TEXT NOT NULL UNIQUE  -- UNIQUE evita duplicados en URLs
+);
+
+
+-- ─────────────────────────────────────────
+-- 3. COURSES
+-- ─────────────────────────────────────────
+CREATE TABLE courses (
+  id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title             TEXT        NOT NULL,
+  slug              TEXT        NOT NULL UNIQUE,  -- UNIQUE evita duplicados en URLs
+  description       TEXT,
+  short_description TEXT,
+  thumbnail_url     TEXT,
+  level             TEXT        CHECK (level IN ('beginner', 'intermediate', 'advanced')),
+  category_id       UUID        REFERENCES categories(id) ON DELETE SET NULL,
+  is_published      BOOLEAN     NOT NULL DEFAULT FALSE,
+  is_featured       BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Trigger: actualiza updated_at automáticamente al editar un curso
+CREATE TRIGGER courses_updated_at
+  BEFORE UPDATE ON courses
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+
+-- ─────────────────────────────────────────
+-- 4. SECTIONS
+-- Un curso tiene varias secciones ordenadas por position
+-- ─────────────────────────────────────────
+CREATE TABLE sections (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id  UUID        NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+  title      TEXT        NOT NULL,
+  position   INTEGER     NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+
+-- ─────────────────────────────────────────
+-- 5. LESSONS
+-- Una sección tiene varias lecciones ordenadas por position
+-- ─────────────────────────────────────────
+CREATE TABLE lessons (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  section_id       UUID        NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
+  title            TEXT        NOT NULL,
+  description      TEXT,
+  youtube_url      TEXT,        -- URL de YouTube (se recomienda videos no listados)
+  duration_seconds INTEGER,
+  is_preview       BOOLEAN     NOT NULL DEFAULT FALSE,  -- si true, visible sin inscripción
+  position         INTEGER     NOT NULL DEFAULT 0,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Trigger: actualiza updated_at automáticamente al editar una lección
+CREATE TRIGGER lessons_updated_at
+  BEFORE UPDATE ON lessons
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+
+-- ─────────────────────────────────────────
+-- 6. RESOURCES (materiales descargables)
+-- PDFs u otros archivos adjuntos a una lección
+-- ─────────────────────────────────────────
+CREATE TABLE resources (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lesson_id  UUID NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
+  title      TEXT NOT NULL,
+  file_url   TEXT NOT NULL,  -- URL en Supabase Storage
+  file_type  TEXT            -- ej: 'pdf', 'zip', 'docx'
+);
+
+
+-- ─────────────────────────────────────────
+-- 7. ENROLLMENTS
+-- Registro de qué usuarios están inscritos en qué cursos
+-- PRIMARY KEY compuesta evita doble inscripción
+-- ─────────────────────────────────────────
+CREATE TABLE enrollments (
+  user_id      UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  course_id    UUID        NOT NULL REFERENCES courses(id)  ON DELETE CASCADE,
+  enrolled_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  completed_at TIMESTAMPTZ,          -- NULL si aún no ha completado el curso
+  PRIMARY KEY (user_id, course_id)   -- evita doble inscripción
+);
+
+
+-- ─────────────────────────────────────────
+-- 8. LESSON PROGRESS
+-- Rastrea qué lecciones ha completado cada usuario
+-- PRIMARY KEY compuesta evita duplicados
+-- ─────────────────────────────────────────
+CREATE TABLE lesson_progress (
+  user_id    UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  lesson_id  UUID        NOT NULL REFERENCES lessons(id)  ON DELETE CASCADE,
+  completed  BOOLEAN     NOT NULL DEFAULT FALSE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, lesson_id)   -- evita duplicados, más eficiente
+);
+
+-- Trigger: actualiza updated_at automáticamente al marcar progreso
+CREATE TRIGGER lesson_progress_updated_at
+  BEFORE UPDATE ON lesson_progress
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+
+-- ─────────────────────────────────────────
+-- 9. NOTES
+-- Notas personales del estudiante por lección
+-- ─────────────────────────────────────────
+CREATE TABLE notes (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID        NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  lesson_id  UUID        NOT NULL REFERENCES lessons(id)  ON DELETE CASCADE,
+  content    TEXT        NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+
+-- ─────────────────────────────────────────
+-- ÍNDICES
+-- Aceleran las consultas más frecuentes
+-- Deben ir al final, después de crear todas las tablas
+-- ─────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_sections_course_id  ON sections(course_id);
+CREATE INDEX IF NOT EXISTS idx_lessons_section_id  ON lessons(section_id);
+CREATE INDEX IF NOT EXISTS idx_resources_lesson_id ON resources(lesson_id);
+</file>
+
+</files>

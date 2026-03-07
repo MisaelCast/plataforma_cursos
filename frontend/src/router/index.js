@@ -6,16 +6,22 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      // Página principal — después será el catálogo de cursos
+      path: '/',
+      name: 'home',
+      component: () => import('../views/HomeView.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: LoginView,
     },
     {
       path: '/auth/callback',
       name: 'callback',
-      component: CallbackView
-    }
-  ]
+      component: CallbackView,
+    },
+  ],
 })
 
 export default router
