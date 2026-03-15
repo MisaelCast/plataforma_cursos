@@ -12,7 +12,7 @@ import { supabase } from '../../lib/supabase'
 const router = useRouter()
 
 onMounted(async () => {
-  const { data, error } = await supabase.auth.getSession()
+  const { data} = await supabase.auth.getSession()
 
   if (data?.session) {
     router.push('/')
