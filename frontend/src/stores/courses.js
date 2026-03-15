@@ -24,7 +24,7 @@ export const useCoursesStore = defineStore('courses', () => {
     try {
       const { data, error: err } = await supabase
         .from('courses')
-        .select('*, categories (id, name)')
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (err) throw err
@@ -33,8 +33,6 @@ export const useCoursesStore = defineStore('courses', () => {
       error.value = err.message
       console.error('fetchCourses error:', err.message)
     } finally {
-      // Siempre se ejecuta, aunque haya error
-      // evita que loading quede en true para siempre
       loading.value = false
     }
   }

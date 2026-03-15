@@ -42,6 +42,13 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
+      // Detalle del curso — gestión de secciones y lecciones
+      path: '/admin/cursos/:id',
+      name: 'admin-curso-detalle',
+      component: () => import('../views/admin/CourseDetailView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/login',
       name: 'login',
       component: LoginView,

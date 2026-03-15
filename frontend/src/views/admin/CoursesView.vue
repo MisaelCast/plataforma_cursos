@@ -63,7 +63,12 @@
                   {{ course.title.charAt(0) }}
                 </div>
                 <div>
-                  <p class="font-medium text-gray-900">{{ course.title }}</p>
+                   <router-link
+    :to="`/admin/cursos/${course.id}`"
+    class="font-medium text-gray-900 hover:text-indigo-600 transition-colors"
+  >
+    {{ course.title }}
+  </router-link>
                   <p class="text-gray-400 text-xs">{{ course.slug }}</p>
                 </div>
               </div>
@@ -155,14 +160,13 @@ const coursesStore = useCoursesStore()
 const courseToDelete = ref(null)
 
 // Carga los cursos al montar la vista
-onMounted(() => {
-  onMounted(() => {
-  // Resetea el loading antes de fetchear por si quedó colgado
+onMounted(async () => {
+  console.log('CoursesView montado')
   coursesStore.loading = false
-  coursesStore.fetchCourses()
+  await coursesStore.fetchCourses()
+  console.log('Cursos cargados:', coursesStore.courses)
 })
 
-})
 
 // Muestra el modal de confirmación
 function confirmDelete(course) {
