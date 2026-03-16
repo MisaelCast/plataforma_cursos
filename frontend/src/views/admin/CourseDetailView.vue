@@ -1,12 +1,8 @@
 <template>
   <div class="max-w-4xl mx-auto px-6 py-8">
-
     <!-- Encabezado -->
     <div class="flex items-center gap-4 mb-8">
-      <router-link
-        to="/admin/cursos"
-        class="text-gray-400 hover:text-gray-600 transition-colors"
-      >
+      <router-link to="/admin/cursos" class="text-gray-400 hover:text-gray-600 transition-colors">
         ← Volver
       </router-link>
       <div>
@@ -21,7 +17,6 @@
     </div>
 
     <div v-else>
-
       <!-- Secciones -->
       <div class="space-y-4">
         <div
@@ -29,11 +24,10 @@
           :key="section.id"
           class="bg-white border border-gray-200 rounded-xl overflow-hidden"
         >
-
           <!-- Encabezado de sección -->
-          <div class="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-200">
-
-            <!-- Editar título de sección -->
+          <div
+            class="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-200"
+          >
             <div class="flex items-center gap-3 flex-1">
               <span class="text-gray-400 text-sm font-mono">§</span>
               <input
@@ -55,7 +49,6 @@
               </span>
             </div>
 
-            <!-- Acciones de sección -->
             <div class="flex items-center gap-3">
               <button
                 @click="openNewLessonForm(section.id)"
@@ -74,12 +67,8 @@
 
           <!-- Lista de lecciones -->
           <div class="divide-y divide-gray-100">
-
             <!-- Sin lecciones -->
-            <div
-              v-if="section.lessons.length === 0"
-              class="px-5 py-4 text-gray-400 text-sm italic"
-            >
+            <div v-if="section.lessons.length === 0" class="px-5 py-4 text-gray-400 text-sm italic">
               Sin lecciones todavía — haz clic en "+ Lección" para agregar
             </div>
 
@@ -93,33 +82,62 @@
                 <span class="text-gray-300 text-sm">▶</span>
 
                 <!-- Editar lección inline -->
-                <div v-if="editingLessonId === lesson.id" class="flex-1 flex items-center gap-2">
-                  <input
-                    v-model="editingLesson.title"
-                    placeholder="Título"
-                    class="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <input
-                    v-model="editingLesson.youtube_url"
-                    placeholder="URL de YouTube"
-                    class="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
-                    <input v-model="editingLesson.is_preview" type="checkbox" class="accent-indigo-600" />
-                    Preview
-                  </label>
-                  <button
-                    @click="saveLesson(lesson.id, section.id)"
-                    class="text-indigo-600 hover:text-indigo-800 text-sm cursor-pointer"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    @click="editingLessonId = null"
-                    class="text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
+                <div v-if="editingLessonId === lesson.id" class="flex-1 flex flex-col gap-2">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <input
+                      v-model="editingLesson.title"
+                      placeholder="Título"
+                      class="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <input
+                      v-model="editingLesson.youtube_url"
+                      placeholder="URL de YouTube"
+                      class="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
+                      <input
+                        v-model="editingLesson.is_preview"
+                        type="checkbox"
+                        class="accent-indigo-600"
+                      />
+                      Preview
+                    </label>
+                  </div>
+
+                  <!-- Subida de PDF al editar -->
+                  <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-600">
+                      <span>PDF:</span>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        @change="handleEditLessonPdf"
+                        class="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer"
+                      />
+                    </label>
+                    <span v-if="editingLesson.pdf_uploading" class="text-indigo-500 text-xs"
+                      >Subiendo...</span
+                    >
+                    <span v-if="editingLesson.pdf_url" class="text-green-600 text-xs"
+                      >✓ PDF listo</span
+                    >
+                  </div>
+
+                  <div class="flex gap-2">
+                    <button
+                      @click="saveLesson(lesson.id, section.id)"
+                      :disabled="editingLesson.pdf_uploading"
+                      class="text-indigo-600 hover:text-indigo-800 text-sm cursor-pointer disabled:opacity-50"
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      @click="editingLessonId = null"
+                      class="text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Vista de lección -->
@@ -139,6 +157,7 @@
                   >
                     Ver video ↗
                   </a>
+                  <span v-if="lesson.pdf_url" class="text-xs text-orange-500"> 📄 PDF </span>
                 </div>
               </div>
 
@@ -164,36 +183,62 @@
               v-if="newLessonSectionId === section.id"
               class="px-5 py-4 bg-indigo-50 border-t border-indigo-100"
             >
-              <div class="flex items-center gap-2 flex-wrap">
-                <input
-                  v-model="newLesson.title"
-                  placeholder="Título de la lección"
-                  class="flex-1 min-w-48 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                <input
-                  v-model="newLesson.youtube_url"
-                  placeholder="URL de YouTube"
-                  class="flex-1 min-w-48 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                <label class="flex items-center gap-1 text-sm text-gray-600 cursor-pointer">
-                  <input v-model="newLesson.is_preview" type="checkbox" class="accent-indigo-600" />
-                  Preview
-                </label>
-                <button
-                  @click="handleCreateLesson(section.id)"
-                  class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg transition-colors cursor-pointer"
-                >
-                  Agregar
-                </button>
-                <button
-                  @click="newLessonSectionId = null"
-                  class="text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
-                >
-                  Cancelar
-                </button>
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <input
+                    v-model="newLesson.title"
+                    placeholder="Título de la lección"
+                    class="flex-1 min-w-48 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <input
+                    v-model="newLesson.youtube_url"
+                    placeholder="URL de YouTube (opcional)"
+                    class="flex-1 min-w-48 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <label class="flex items-center gap-1 text-sm text-gray-600 cursor-pointer">
+                    <input
+                      v-model="newLesson.is_preview"
+                      type="checkbox"
+                      class="accent-indigo-600"
+                    />
+                    Preview
+                  </label>
+                </div>
+
+                <!-- Subida de PDF -->
+                <div class="flex items-center gap-3">
+                  <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
+                    <span>PDF (opcional):</span>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      @change="handleNewLessonPdf"
+                      class="text-sm text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer"
+                    />
+                  </label>
+                  <span v-if="newLesson.pdf_uploading" class="text-indigo-500 text-xs"
+                    >Subiendo...</span
+                  >
+                  <span v-if="newLesson.pdf_url" class="text-green-600 text-xs">✓ PDF listo</span>
+                </div>
+
+                <div class="flex gap-2">
+                  <button
+                    @click="handleCreateLesson(section.id)"
+                    :disabled="newLesson.pdf_uploading"
+                    class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm px-4 py-2 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Agregar
+                  </button>
+                  <button
+                    @click="newLessonSectionId = null"
+                    class="text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
@@ -231,7 +276,6 @@
           + Agregar sección
         </button>
       </div>
-
     </div>
 
     <!-- Modal confirmación eliminar sección -->
@@ -243,8 +287,8 @@
       <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
         <h3 class="font-bold text-gray-900 text-lg">¿Eliminar sección?</h3>
         <p class="text-gray-500 text-sm mt-2">
-          Se eliminará <strong>{{ sectionToDelete.title }}</strong> y todas sus lecciones.
-          Esta acción no se puede deshacer.
+          Se eliminará <strong>{{ sectionToDelete.title }}</strong> y todas sus lecciones. Esta
+          acción no se puede deshacer.
         </p>
         <div class="flex gap-3 mt-6">
           <button
@@ -272,8 +316,8 @@
       <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
         <h3 class="font-bold text-gray-900 text-lg">¿Eliminar lección?</h3>
         <p class="text-gray-500 text-sm mt-2">
-          Se eliminará <strong>{{ lessonToDelete.lesson.title }}</strong>.
-          Esta acción no se puede deshacer.
+          Se eliminará <strong>{{ lessonToDelete.lesson.title }}</strong
+          >. Esta acción no se puede deshacer.
         </p>
         <div class="flex gap-3 mt-6">
           <button
@@ -291,7 +335,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -300,6 +343,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSectionsStore } from '../../stores/sections'
 import { useCoursesStore } from '../../stores/courses'
+import { supabase } from '../../lib/supabase'
 
 const route = useRoute()
 const sectionsStore = useSectionsStore()
@@ -321,11 +365,23 @@ const sectionToDelete = ref(null)
 
 // ── Nueva lección ──
 const newLessonSectionId = ref(null)
-const newLesson = reactive({ title: '', youtube_url: '', is_preview: false })
+const newLesson = reactive({
+  title: '',
+  youtube_url: '',
+  is_preview: false,
+  pdf_url: null,
+  pdf_uploading: false,
+})
 
 // ── Editar lección inline ──
 const editingLessonId = ref(null)
-const editingLesson = reactive({ title: '', youtube_url: '', is_preview: false })
+const editingLesson = reactive({
+  title: '',
+  youtube_url: '',
+  is_preview: false,
+  pdf_url: null,
+  pdf_uploading: false,
+})
 
 // ── Eliminar lección ──
 const lessonToDelete = ref(null)
@@ -333,12 +389,8 @@ const lessonToDelete = ref(null)
 // Carga el curso y sus secciones al montar la vista
 onMounted(async () => {
   const courseId = route.params.id
-
-  // Carga el curso desde el store o directo de Supabase
   await coursesStore.fetchCourseById(courseId)
   course.value = coursesStore.currentCourse
-
-  // Carga las secciones con sus lecciones
   await sectionsStore.fetchSections(courseId)
 })
 
@@ -372,6 +424,50 @@ async function handleDeleteSection() {
   sectionToDelete.value = null
 }
 
+// ── Subida de PDF para nueva lección ──
+async function handleNewLessonPdf(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  newLesson.pdf_uploading = true
+
+  // Nombre único para evitar colisiones
+  const fileName = `${Date.now()}-${file.name}`
+
+  const { data, error } = await supabase.storage.from('recursos').upload(fileName, file)
+
+  if (error) {
+    console.error('Error subiendo PDF:', error.message)
+  } else {
+    // Obtiene la URL pública del archivo
+    const { data: urlData } = supabase.storage.from('recursos').getPublicUrl(data.path)
+    newLesson.pdf_url = urlData.publicUrl
+  }
+
+  newLesson.pdf_uploading = false
+}
+
+// ── Subida de PDF para editar lección ──
+async function handleEditLessonPdf(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  editingLesson.pdf_uploading = true
+
+  const fileName = `${Date.now()}-${file.name}`
+
+  const { data, error } = await supabase.storage.from('recursos').upload(fileName, file)
+
+  if (error) {
+    console.error('Error subiendo PDF:', error.message)
+  } else {
+    const { data: urlData } = supabase.storage.from('recursos').getPublicUrl(data.path)
+    editingLesson.pdf_url = urlData.publicUrl
+  }
+
+  editingLesson.pdf_uploading = false
+}
+
 // ── Lecciones ──
 
 function openNewLessonForm(sectionId) {
@@ -379,6 +475,8 @@ function openNewLessonForm(sectionId) {
   newLesson.title = ''
   newLesson.youtube_url = ''
   newLesson.is_preview = false
+  newLesson.pdf_url = null
+  newLesson.pdf_uploading = false
 }
 
 async function handleCreateLesson(sectionId) {
@@ -386,7 +484,8 @@ async function handleCreateLesson(sectionId) {
   await sectionsStore.createLesson(sectionId, {
     title: newLesson.title.trim(),
     youtube_url: newLesson.youtube_url || null,
-    is_preview: newLesson.is_preview
+    is_preview: newLesson.is_preview,
+    pdf_url: newLesson.pdf_url || null,
   })
   newLessonSectionId.value = null
 }
@@ -396,6 +495,8 @@ function startEditLesson(lesson) {
   editingLesson.title = lesson.title
   editingLesson.youtube_url = lesson.youtube_url || ''
   editingLesson.is_preview = lesson.is_preview
+  editingLesson.pdf_url = lesson.pdf_url || null
+  editingLesson.pdf_uploading = false
 }
 
 async function saveLesson(lessonId, sectionId) {
@@ -403,7 +504,8 @@ async function saveLesson(lessonId, sectionId) {
   await sectionsStore.updateLesson(lessonId, sectionId, {
     title: editingLesson.title.trim(),
     youtube_url: editingLesson.youtube_url || null,
-    is_preview: editingLesson.is_preview
+    is_preview: editingLesson.is_preview,
+    pdf_url: editingLesson.pdf_url || null,
   })
   editingLessonId.value = null
 }
@@ -414,10 +516,7 @@ function confirmDeleteLesson(lesson, sectionId) {
 
 async function handleDeleteLesson() {
   if (!lessonToDelete.value) return
-  await sectionsStore.deleteLesson(
-    lessonToDelete.value.lesson.id,
-    lessonToDelete.value.sectionId
-  )
+  await sectionsStore.deleteLesson(lessonToDelete.value.lesson.id, lessonToDelete.value.sectionId)
   lessonToDelete.value = null
 }
 </script>

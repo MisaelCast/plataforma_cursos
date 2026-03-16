@@ -10,7 +10,14 @@ const router = createRouter({
       // Página principal — catálogo de cursos
       path: '/',
       name: 'home',
-      component: () => import('../views/HomeView.vue'),
+      component: () => import('../views/CatalogView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      // Detalle público del curso
+      path: '/cursos/:slug',
+      name: 'curso',
+      component: () => import('../views/CourseView.vue'),
       meta: { requiresAuth: true },
     },
     {
@@ -40,6 +47,13 @@ const router = createRouter({
       name: 'admin-cursos-editar',
       component: () => import('../views/admin/CourseFormView.vue'),
       meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      // Vista del reproductor de video
+      path: '/cursos/:slug/aprender',
+      name: 'aprender',
+      component: () => import('../views/LearnView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       // Detalle del curso — gestión de secciones y lecciones
