@@ -63,6 +63,13 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {
+      // Editor de quiz — admin
+      path: '/admin/cursos/:courseId/quiz/:lessonId',
+      name: 'admin-quiz-editor',
+      component: () => import('../views/admin/QuizEditorView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/login',
       name: 'login',
       component: LoginView,

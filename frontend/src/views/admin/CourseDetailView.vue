@@ -79,7 +79,16 @@
               class="px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
               <div class="flex items-center gap-3 flex-1">
-                <span class="text-gray-300 text-sm">▶</span>
+                <!-- Icono según tipo -->
+                <span class="text-gray-300 text-sm">
+                  {{
+                    lesson.lesson_type === 'text'
+                      ? '📝'
+                      : lesson.lesson_type === 'quiz'
+                        ? '📋'
+                        : '▶'
+                  }}
+                </span>
 
                 <!-- Editar lección inline -->
                 <div v-if="editingLessonId === lesson.id" class="flex-1 flex flex-col gap-2">
@@ -89,11 +98,16 @@
                       placeholder="Título"
                       class="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
-                    <input
-                      v-model="editingLesson.youtube_url"
-                      placeholder="URL de YouTube"
-                      class="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
+                    <select
+                      v-model="editingLesson.lesson_type"
+                      class="border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                    >
+                      <option value="video">Video</option>
+                      <option value="pdf">PDF</option>
+                      <option value="text">Texto</option>
+                      <option value="mixed">Video + PDF</option>
+                      <option value="quiz">Quiz</option>
+                    </select>
                     <label class="flex items-center gap-1 text-xs text-gray-500 cursor-pointer">
                       <input
                         v-model="editingLesson.is_preview"
@@ -104,8 +118,23 @@
                     </label>
                   </div>
 
+                  <!-- URL YouTube al editar -->
+                  <input
+                    v-if="
+                      editingLesson.lesson_type === 'video' || editingLesson.lesson_type === 'mixed'
+                    "
+                    v-model="editingLesson.youtube_url"
+                    placeholder="URL de YouTube"
+                    class="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+
                   <!-- Subida de PDF al editar -->
-                  <div class="flex items-center gap-3">
+                  <div
+                    v-if="
+                      editingLesson.lesson_type === 'pdf' || editingLesson.lesson_type === 'mixed'
+                    "
+                    class="flex items-center gap-3"
+                  >
                     <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-600">
                       <span>PDF:</span>
                       <input
@@ -121,6 +150,54 @@
                     <span v-if="editingLesson.pdf_url" class="text-green-600 text-xs"
                       >✓ PDF listo</span
                     >
+                  </div>
+
+                  <!-- Editor Markdown al editar -->
+                  <div v-if="editingLesson.lesson_type === 'text'" class="flex flex-col gap-2">
+                    <div class="flex gap-2">
+                      <button
+                        @click="editingLesson.previewMode = false"
+                        class="text-xs px-3 py-1 rounded cursor-pointer transition-colors"
+                        :class="
+                          !editingLesson.previewMode
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-200 text-gray-600'
+                        "
+                      >
+                        Editar
+                      </button>
+                      <button
+                        @click="editingLesson.previewMode = true"
+                        class="text-xs px-3 py-1 rounded cursor-pointer transition-colors"
+                        :class="
+                          editingLesson.previewMode
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-200 text-gray-600'
+                        "
+                      >
+                        Preview
+                      </button>
+                    </div>
+                    <textarea
+                      v-if="!editingLesson.previewMode"
+                      v-model="editingLesson.content"
+                      placeholder="Escribe el contenido en Markdown..."
+                      rows="6"
+                      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono resize-none"
+                    />
+                    <div
+                      v-else
+                      class="w-full border border-gray-200 rounded-lg px-4 py-3 bg-white min-h-24 prose prose-sm max-w-none text-sm"
+                      v-html="renderMarkdown(editingLesson.content)"
+                    />
+                  </div>
+
+                  <!-- Quiz — aviso -->
+                  <div
+                    v-if="editingLesson.lesson_type === 'quiz'"
+                    class="text-xs text-gray-400 italic"
+                  >
+                    Guarda la lección y usa el botón "Editar quiz" para agregar preguntas.
                   </div>
 
                   <div class="flex gap-2">
@@ -144,6 +221,19 @@
                 <div v-else class="flex-1 flex items-center gap-3">
                   <span class="text-gray-700 text-sm">{{ lesson.title }}</span>
                   <span
+                    v-if="lesson.lesson_type"
+                    class="text-xs px-2 py-0.5 rounded-full"
+                    :class="{
+                      'bg-blue-100 text-blue-700': lesson.lesson_type === 'video',
+                      'bg-orange-100 text-orange-700': lesson.lesson_type === 'pdf',
+                      'bg-purple-100 text-purple-700': lesson.lesson_type === 'text',
+                      'bg-green-100 text-green-700': lesson.lesson_type === 'mixed',
+                      'bg-yellow-100 text-yellow-700': lesson.lesson_type === 'quiz',
+                    }"
+                  >
+                    {{ typelabel(lesson.lesson_type) }}
+                  </span>
+                  <span
                     v-if="lesson.is_preview"
                     class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full"
                   >
@@ -157,7 +247,16 @@
                   >
                     Ver video ↗
                   </a>
-                  <span v-if="lesson.pdf_url" class="text-xs text-orange-500"> 📄 PDF </span>
+                  <span v-if="lesson.pdf_url" class="text-xs text-orange-500">📄 PDF</span>
+
+                  <!-- Link al editor de quiz -->
+                  <router-link
+                    v-if="lesson.lesson_type === 'quiz'"
+                    :to="`/admin/cursos/${route.params.id}/quiz/${lesson.id}`"
+                    class="text-yellow-600 hover:text-yellow-800 text-xs transition-colors"
+                  >
+                    Editar quiz →
+                  </router-link>
                 </div>
               </div>
 
@@ -184,17 +283,23 @@
               class="px-5 py-4 bg-indigo-50 border-t border-indigo-100"
             >
               <div class="flex flex-col gap-3">
+                <!-- Título y tipo -->
                 <div class="flex items-center gap-2 flex-wrap">
                   <input
                     v-model="newLesson.title"
                     placeholder="Título de la lección"
                     class="flex-1 min-w-48 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                  <input
-                    v-model="newLesson.youtube_url"
-                    placeholder="URL de YouTube (opcional)"
-                    class="flex-1 min-w-48 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
+                  <select
+                    v-model="newLesson.lesson_type"
+                    class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  >
+                    <option value="video">Video</option>
+                    <option value="pdf">PDF</option>
+                    <option value="text">Texto</option>
+                    <option value="mixed">Video + PDF</option>
+                    <option value="quiz">Quiz</option>
+                  </select>
                   <label class="flex items-center gap-1 text-sm text-gray-600 cursor-pointer">
                     <input
                       v-model="newLesson.is_preview"
@@ -205,10 +310,21 @@
                   </label>
                 </div>
 
+                <!-- URL YouTube -->
+                <input
+                  v-if="newLesson.lesson_type === 'video' || newLesson.lesson_type === 'mixed'"
+                  v-model="newLesson.youtube_url"
+                  placeholder="URL de YouTube"
+                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+
                 <!-- Subida de PDF -->
-                <div class="flex items-center gap-3">
+                <div
+                  v-if="newLesson.lesson_type === 'pdf' || newLesson.lesson_type === 'mixed'"
+                  class="flex items-center gap-3"
+                >
                   <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-600">
-                    <span>PDF (opcional):</span>
+                    <span>PDF:</span>
                     <input
                       type="file"
                       accept=".pdf"
@@ -220,6 +336,60 @@
                     >Subiendo...</span
                   >
                   <span v-if="newLesson.pdf_url" class="text-green-600 text-xs">✓ PDF listo</span>
+                </div>
+
+                <!-- Editor Markdown -->
+                <div v-if="newLesson.lesson_type === 'text'" class="flex flex-col gap-2">
+                  <div class="flex gap-2">
+                    <button
+                      @click="newLesson.previewMode = false"
+                      class="text-xs px-3 py-1 rounded cursor-pointer transition-colors"
+                      :class="
+                        !newLesson.previewMode
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-200 text-gray-600'
+                      "
+                    >
+                      Editar
+                    </button>
+                    <button
+                      @click="newLesson.previewMode = true"
+                      class="text-xs px-3 py-1 rounded cursor-pointer transition-colors"
+                      :class="
+                        newLesson.previewMode
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-200 text-gray-600'
+                      "
+                    >
+                      Preview
+                    </button>
+                  </div>
+                  <textarea
+                    v-if="!newLesson.previewMode"
+                    v-model="newLesson.content"
+                    placeholder="Escribe el contenido en Markdown...
+
+# Título
+## Subtítulo
+**negrita** *cursiva*
+- Lista item"
+                    rows="8"
+                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono resize-none"
+                  />
+                  <div
+                    v-else
+                    class="w-full border border-gray-200 rounded-lg px-4 py-3 bg-white min-h-32 prose prose-sm max-w-none text-sm"
+                    v-html="renderMarkdown(newLesson.content)"
+                  />
+                </div>
+
+                <!-- Quiz — aviso -->
+                <div
+                  v-if="newLesson.lesson_type === 'quiz'"
+                  class="text-xs text-gray-400 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2"
+                >
+                  📋 Después de crear la lección, usa el botón <strong>"Editar quiz"</strong> para
+                  agregar las preguntas.
                 </div>
 
                 <div class="flex gap-2">
@@ -278,7 +448,7 @@
       </div>
     </div>
 
-    <!-- Modal confirmación eliminar sección -->
+    <!-- Modal confirmar eliminar sección -->
     <div
       v-if="sectionToDelete"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -307,7 +477,7 @@
       </div>
     </div>
 
-    <!-- Modal confirmación eliminar lección -->
+    <!-- Modal confirmar eliminar lección -->
     <div
       v-if="lessonToDelete"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
@@ -343,7 +513,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSectionsStore } from '../../stores/sections'
 import { useCoursesStore } from '../../stores/courses'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/services/supabase'
+import { marked } from 'marked'
 
 const route = useRoute()
 const sectionsStore = useSectionsStore()
@@ -367,20 +538,26 @@ const sectionToDelete = ref(null)
 const newLessonSectionId = ref(null)
 const newLesson = reactive({
   title: '',
+  lesson_type: 'video',
   youtube_url: '',
   is_preview: false,
   pdf_url: null,
   pdf_uploading: false,
+  content: '',
+  previewMode: false,
 })
 
 // ── Editar lección inline ──
 const editingLessonId = ref(null)
 const editingLesson = reactive({
   title: '',
+  lesson_type: 'video',
   youtube_url: '',
   is_preview: false,
   pdf_url: null,
   pdf_uploading: false,
+  content: '',
+  previewMode: false,
 })
 
 // ── Eliminar lección ──
@@ -430,8 +607,6 @@ async function handleNewLessonPdf(event) {
   if (!file) return
 
   newLesson.pdf_uploading = true
-
-  // Nombre único para evitar colisiones
   const fileName = `${Date.now()}-${file.name}`
 
   const { data, error } = await supabase.storage.from('recursos').upload(fileName, file)
@@ -439,7 +614,6 @@ async function handleNewLessonPdf(event) {
   if (error) {
     console.error('Error subiendo PDF:', error.message)
   } else {
-    // Obtiene la URL pública del archivo
     const { data: urlData } = supabase.storage.from('recursos').getPublicUrl(data.path)
     newLesson.pdf_url = urlData.publicUrl
   }
@@ -453,7 +627,6 @@ async function handleEditLessonPdf(event) {
   if (!file) return
 
   editingLesson.pdf_uploading = true
-
   const fileName = `${Date.now()}-${file.name}`
 
   const { data, error } = await supabase.storage.from('recursos').upload(fileName, file)
@@ -468,24 +641,48 @@ async function handleEditLessonPdf(event) {
   editingLesson.pdf_uploading = false
 }
 
+// ── Markdown ──
+
+// Renderiza contenido Markdown a HTML
+function renderMarkdown(content) {
+  if (!content) return '<p class="text-gray-400 italic">Sin contenido todavía...</p>'
+  return marked(content)
+}
+
+// Devuelve etiqueta legible del tipo de lección
+function typelabel(type) {
+  const labels = {
+    video: '▶ Video',
+    pdf: '📄 PDF',
+    text: '📝 Texto',
+    mixed: '▶ + 📄',
+  }
+  return labels[type] || type
+}
+
 // ── Lecciones ──
 
 function openNewLessonForm(sectionId) {
   newLessonSectionId.value = sectionId
   newLesson.title = ''
+  newLesson.lesson_type = 'video'
   newLesson.youtube_url = ''
   newLesson.is_preview = false
   newLesson.pdf_url = null
   newLesson.pdf_uploading = false
+  newLesson.content = ''
+  newLesson.previewMode = false
 }
 
 async function handleCreateLesson(sectionId) {
   if (!newLesson.title.trim()) return
   await sectionsStore.createLesson(sectionId, {
     title: newLesson.title.trim(),
+    lesson_type: newLesson.lesson_type,
     youtube_url: newLesson.youtube_url || null,
     is_preview: newLesson.is_preview,
     pdf_url: newLesson.pdf_url || null,
+    content: newLesson.content || null,
   })
   newLessonSectionId.value = null
 }
@@ -493,19 +690,24 @@ async function handleCreateLesson(sectionId) {
 function startEditLesson(lesson) {
   editingLessonId.value = lesson.id
   editingLesson.title = lesson.title
+  editingLesson.lesson_type = lesson.lesson_type || 'video'
   editingLesson.youtube_url = lesson.youtube_url || ''
   editingLesson.is_preview = lesson.is_preview
   editingLesson.pdf_url = lesson.pdf_url || null
   editingLesson.pdf_uploading = false
+  editingLesson.content = lesson.content || ''
+  editingLesson.previewMode = false
 }
 
 async function saveLesson(lessonId, sectionId) {
   if (!editingLesson.title.trim()) return
   await sectionsStore.updateLesson(lessonId, sectionId, {
     title: editingLesson.title.trim(),
+    lesson_type: editingLesson.lesson_type,
     youtube_url: editingLesson.youtube_url || null,
     is_preview: editingLesson.is_preview,
     pdf_url: editingLesson.pdf_url || null,
+    content: editingLesson.content || null,
   })
   editingLessonId.value = null
 }

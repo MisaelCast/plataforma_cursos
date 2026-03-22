@@ -1,6 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto px-6 py-8">
-
     <!-- Encabezado -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">Catálogo de cursos</h1>
@@ -8,9 +7,7 @@
     </div>
 
     <!-- Estado de carga -->
-    <div v-if="loading" class="text-center py-20 text-gray-400">
-      Cargando cursos...
-    </div>
+    <div v-if="loading" class="text-center py-20 text-gray-400">Cargando cursos...</div>
 
     <!-- Sin cursos -->
     <div v-else-if="courses.length === 0" class="text-center py-20">
@@ -43,7 +40,6 @@
 
         <!-- Info del curso -->
         <div class="p-5">
-
           <!-- Nivel y categoría -->
           <div class="flex items-center gap-2 mb-2">
             <span
@@ -52,16 +48,15 @@
             >
               {{ levelLabel(course.level) }}
             </span>
-            <span
-              v-if="course.categories?.name"
-              class="text-xs text-gray-400"
-            >
+            <span v-if="course.categories?.name" class="text-xs text-gray-400">
               {{ course.categories.name }}
             </span>
           </div>
 
           <!-- Título -->
-          <h2 class="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors leading-snug">
+          <h2
+            class="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors leading-snug"
+          >
             {{ course.title }}
           </h2>
 
@@ -69,17 +64,15 @@
           <p v-if="course.short_description" class="text-gray-500 text-sm mt-2 line-clamp-2">
             {{ course.short_description }}
           </p>
-
         </div>
       </router-link>
     </div>
-
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/services/supabase'
 
 const courses = ref([])
 const loading = ref(true)
@@ -106,7 +99,7 @@ function levelLabel(level) {
   const labels = {
     beginner: 'Principiante',
     intermediate: 'Intermedio',
-    advanced: 'Avanzado'
+    advanced: 'Avanzado',
   }
   return labels[level] || level
 }

@@ -1,6 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto px-6 py-8">
-
     <!-- Encabezado -->
     <div class="flex items-center justify-between mb-8">
       <div>
@@ -29,7 +28,6 @@
     <!-- Tabla de cursos -->
     <div v-else class="bg-white rounded-xl border border-gray-200 overflow-hidden">
       <table class="w-full text-sm">
-
         <!-- Encabezados -->
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
@@ -63,12 +61,12 @@
                   {{ course.title.charAt(0) }}
                 </div>
                 <div>
-                   <router-link
-    :to="`/admin/cursos/${course.id}`"
-    class="font-medium text-gray-900 hover:text-indigo-600 transition-colors"
-  >
-    {{ course.title }}
-  </router-link>
+                  <router-link
+                    :to="`/admin/cursos/${course.id}`"
+                    class="font-medium text-gray-900 hover:text-indigo-600 transition-colors"
+                  >
+                    {{ course.title }}
+                  </router-link>
                   <p class="text-gray-400 text-xs">{{ course.slug }}</p>
                 </div>
               </div>
@@ -87,9 +85,9 @@
             <!-- Estado publicado/borrador -->
             <td class="px-6 py-4">
               <span
-                :class="course.is_published
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-500'"
+                :class="
+                  course.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                "
                 class="px-2 py-1 rounded-full text-xs font-medium"
               >
                 {{ course.is_published ? 'Publicado' : 'Borrador' }}
@@ -127,8 +125,8 @@
       <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
         <h3 class="font-bold text-gray-900 text-lg">¿Eliminar curso?</h3>
         <p class="text-gray-500 text-sm mt-2">
-          Estás a punto de eliminar <strong>{{ courseToDelete.title }}</strong>.
-          Esta acción no se puede deshacer.
+          Estás a punto de eliminar <strong>{{ courseToDelete.title }}</strong
+          >. Esta acción no se puede deshacer.
         </p>
         <div class="flex gap-3 mt-6">
           <button
@@ -146,7 +144,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -163,10 +160,9 @@ const courseToDelete = ref(null)
 onMounted(async () => {
   console.log('CoursesView montado')
   coursesStore.loading = false
-  await coursesStore.fetchCourses()
+  await coursesStore.fetchAdminCourses()
   console.log('Cursos cargados:', coursesStore.courses)
 })
-
 
 // Muestra el modal de confirmación
 function confirmDelete(course) {
@@ -185,7 +181,7 @@ function levelLabel(level) {
   const labels = {
     beginner: 'Principiante',
     intermediate: 'Intermedio',
-    advanced: 'Avanzado'
+    advanced: 'Avanzado',
   }
   return labels[level] || '—'
 }

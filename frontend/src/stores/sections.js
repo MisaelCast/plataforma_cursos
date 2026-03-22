@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/services/supabase'
 
 export const useSectionsStore = defineStore('sections', () => {
   // ─────────────────────────────────────────

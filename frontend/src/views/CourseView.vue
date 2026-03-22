@@ -1,10 +1,7 @@
 <template>
   <div>
-
     <!-- Estado de carga -->
-    <div v-if="loading" class="text-center py-20 text-gray-400">
-      Cargando curso...
-    </div>
+    <div v-if="loading" class="text-center py-20 text-gray-400">Cargando curso...</div>
 
     <!-- Curso no encontrado -->
     <div v-else-if="!course" class="text-center py-20">
@@ -15,19 +12,14 @@
     </div>
 
     <div v-else>
-
       <!-- Hero del curso -->
       <div class="bg-gray-900 text-white">
         <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row gap-8 items-start">
-
           <!-- Info -->
           <div class="flex-1">
             <!-- Nivel y categoría -->
             <div class="flex items-center gap-2 mb-3">
-              <span
-                v-if="course.level"
-                class="text-xs bg-indigo-600 px-2 py-0.5 rounded-full"
-              >
+              <span v-if="course.level" class="text-xs bg-indigo-600 px-2 py-0.5 rounded-full">
                 {{ levelLabel(course.level) }}
               </span>
               <span v-if="course.categories?.name" class="text-gray-400 text-sm">
@@ -53,16 +45,34 @@
             </div>
 
             <!-- Ya inscrito -->
-            <div v-else class="flex items-center gap-4">
-              <span class="text-green-400 font-medium">✓ Ya estás inscrito</span>
-              <router-link
-                :to="`/cursos/${course.slug}/aprender`"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg transition-colors"
-              >
-                Continuar curso →
-              </router-link>
-            </div>
+            <div v-else class="flex flex-col gap-4">
+              <div class="flex items-center gap-4">
+                <span class="text-green-400 font-medium">✓ Ya estás inscrito</span>
+                <router-link
+                  :to="`/cursos/${course.slug}/aprender`"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg transition-colors"
+                >
+                  Continuar curso →
+                </router-link>
+              </div>
 
+              <!-- Barra de progreso -->
+              <div v-if="totalLessons > 0">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-gray-300 text-sm">Tu progreso</span>
+                  <span class="text-gray-300 text-sm font-medium">{{ progressPercent }}%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2">
+                  <div
+                    class="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                    :style="{ width: `${progressPercent}%` }"
+                  />
+                </div>
+                <p class="text-gray-400 text-xs mt-1">
+                  {{ completedCount }} de {{ totalLessons }} lecciones completadas
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Thumbnail -->
@@ -80,13 +90,11 @@
               {{ course.title.charAt(0) }}
             </div>
           </div>
-
         </div>
       </div>
 
       <!-- Contenido del curso -->
       <div class="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row gap-8">
-
         <!-- Temario -->
         <div class="flex-1">
           <h2 class="text-xl font-bold text-gray-900 mb-4">Contenido del curso</h2>
@@ -128,7 +136,17 @@
                   :class="lesson.is_preview || isEnrolled ? '' : 'opacity-60'"
                 >
                   <div class="flex items-center gap-3">
-                    <span class="text-gray-300 text-sm">▶</span>
+                    <!-- Check si está completada -->
+                    <div
+                      class="w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center text-xs"
+                      :class="
+                        completedLessons.includes(lesson.id)
+                          ? 'bg-green-500 border-green-500 text-white'
+                          : 'border-gray-300'
+                      "
+                    >
+                      <span v-if="completedLessons.includes(lesson.id)">✓</span>
+                    </div>
                     <span class="text-gray-700 text-sm">{{ lesson.title }}</span>
                     <span
                       v-if="lesson.is_preview"
@@ -136,17 +154,15 @@
                     >
                       Preview
                     </span>
+                    <span v-if="lesson.pdf_url" class="text-xs text-orange-400">📄</span>
                   </div>
 
                   <!-- Acceso según inscripción -->
-                  <div>
-                    <span v-if="!lesson.is_preview && !isEnrolled" class="text-gray-300 text-xs">
-                      🔒
-                    </span>
-                  </div>
+                  <span v-if="!lesson.is_preview && !isEnrolled" class="text-gray-300 text-xs">
+                    🔒
+                  </span>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -154,24 +170,23 @@
         <!-- Descripción completa -->
         <div class="w-full md:w-80 flex-shrink-0">
           <h2 class="text-xl font-bold text-gray-900 mb-4">Acerca de este curso</h2>
-          <p v-if="course.description" class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+          <p
+            v-if="course.description"
+            class="text-gray-600 text-sm leading-relaxed whitespace-pre-line"
+          >
             {{ course.description }}
           </p>
-          <p v-else class="text-gray-400 text-sm italic">
-            Sin descripción disponible.
-          </p>
+          <p v-else class="text-gray-400 text-sm italic">Sin descripción disponible.</p>
         </div>
-
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/services/supabase'
 import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
@@ -183,9 +198,30 @@ const sections = ref([])
 const loading = ref(true)
 const isEnrolled = ref(false)
 const enrolling = ref(false)
+const completedLessons = ref([])
 
 // Secciones abiertas en el acordeón (todas abiertas por defecto)
 const openSections = ref([])
+
+// ── Computed de progreso ──
+
+// Total de lecciones del curso
+const totalLessons = computed(() => {
+  return sections.value.reduce((acc, s) => acc + s.lessons.length, 0)
+})
+
+// Lecciones completadas por el usuario
+const completedCount = computed(() => {
+  return sections.value
+    .flatMap((s) => s.lessons)
+    .filter((l) => completedLessons.value.includes(l.id)).length
+})
+
+// Porcentaje de progreso
+const progressPercent = computed(() => {
+  if (totalLessons.value === 0) return 0
+  return Math.round((completedCount.value / totalLessons.value) * 100)
+})
 
 onMounted(async () => {
   await loadCourse()
@@ -217,13 +253,13 @@ async function loadCourse() {
     .order('position', { ascending: true })
 
   if (sectionsData) {
-    sections.value = sectionsData.map(s => ({
+    sections.value = sectionsData.map((s) => ({
       ...s,
-      lessons: (s.lessons || []).sort((a, b) => a.position - b.position)
+      lessons: (s.lessons || []).sort((a, b) => a.position - b.position),
     }))
 
     // Abre todas las secciones por defecto
-    openSections.value = sectionsData.map(s => s.id)
+    openSections.value = sectionsData.map((s) => s.id)
   }
 
   // Verifica si el usuario ya está inscrito
@@ -236,6 +272,19 @@ async function loadCourse() {
       .single()
 
     isEnrolled.value = !!enrollment
+
+    // Carga el progreso del usuario
+    if (isEnrolled.value) {
+      const { data: progressData } = await supabase
+        .from('lesson_progress')
+        .select('lesson_id')
+        .eq('user_id', authStore.session.user.id)
+        .eq('completed', true)
+
+      if (progressData) {
+        completedLessons.value = progressData.map((p) => p.lesson_id)
+      }
+    }
   }
 
   loading.value = false
@@ -260,12 +309,10 @@ async function handleEnroll() {
 
   enrolling.value = true
 
-  const { error } = await supabase
-    .from('enrollments')
-    .insert({
-      user_id: authStore.session.user.id,
-      course_id: course.value.id
-    })
+  const { error } = await supabase.from('enrollments').insert({
+    user_id: authStore.session.user.id,
+    course_id: course.value.id,
+  })
 
   if (error) {
     console.error('Error al inscribirse:', error.message)
@@ -280,7 +327,7 @@ function levelLabel(level) {
   const labels = {
     beginner: 'Principiante',
     intermediate: 'Intermedio',
-    advanced: 'Avanzado'
+    advanced: 'Avanzado',
   }
   return labels[level] || level
 }

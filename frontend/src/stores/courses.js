@@ -1,32 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { supabase } from '../lib/supabase'
+import {
+  getCourses,
+  getCourseById,
+  getAdminCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+} from '@/services/api/courses'
 
 export const useCoursesStore = defineStore('courses', () => {
-  // ─────────────────────────────────────────
-  // Estado
-  // ─────────────────────────────────────────
-
   const courses = ref([])
   const currentCourse = ref(null)
   const loading = ref(false)
   const error = ref(null)
 
-  // ─────────────────────────────────────────
-  // Acciones
-  // ─────────────────────────────────────────
-
-  // Obtiene todos los cursos
   async function fetchCourses() {
     loading.value = true
     error.value = null
-
     try {
-      const { data, error: err } = await supabase
-        .from('courses')
-        .select('*')
-        .order('created_at', { ascending: false })
-
+      const { data, error: err } = await getCourses()
       if (err) throw err
       courses.value = data
     } catch (err) {
@@ -37,18 +30,26 @@ export const useCoursesStore = defineStore('courses', () => {
     }
   }
 
-  // Obtiene un curso por su ID
+  async function fetchAdminCourses() {
+    loading.value = true
+    error.value = null
+    try {
+      const { data, error: err } = await getAdminCourses()
+      if (err) throw err
+      courses.value = data
+    } catch (err) {
+      error.value = err.message
+      console.error('fetchAdminCourses error:', err.message)
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchCourseById(id) {
     loading.value = true
     error.value = null
-
     try {
-      const { data, error: err } = await supabase
-        .from('courses')
-        .select('*, categories (id, name)')
-        .eq('id', id)
-        .single()
-
+      const { data, error: err } = await getCourseById(id)
       if (err) throw err
       currentCourse.value = data
     } catch (err) {
@@ -59,18 +60,11 @@ export const useCoursesStore = defineStore('courses', () => {
     }
   }
 
-  // Crea un nuevo curso
-  async function createCourse(courseData) {
+  async function createCourseAction(courseData) {
     loading.value = true
     error.value = null
-
     try {
-      const { data, error: err } = await supabase
-        .from('courses')
-        .insert(courseData)
-        .select()
-        .single()
-
+      const { data, error: err } = await createCourse(courseData)
       if (err) throw err
       courses.value.unshift(data)
       return data
@@ -83,22 +77,12 @@ export const useCoursesStore = defineStore('courses', () => {
     }
   }
 
-  // Actualiza un curso existente
-  async function updateCourse(id, courseData) {
+  async function updateCourseAction(id, courseData) {
     loading.value = true
     error.value = null
-
     try {
-      const { data, error: err } = await supabase
-        .from('courses')
-        .update(courseData)
-        .eq('id', id)
-        .select()
-        .single()
-
+      const { data, error: err } = await updateCourse(id, courseData)
       if (err) throw err
-
-      // Actualiza el curso en la lista local
       const index = courses.value.findIndex((c) => c.id === id)
       if (index !== -1) courses.value[index] = data
       return data
@@ -111,14 +95,11 @@ export const useCoursesStore = defineStore('courses', () => {
     }
   }
 
-  // Elimina un curso
-  async function deleteCourse(id) {
+  async function deleteCourseAction(id) {
     loading.value = true
     error.value = null
-
     try {
-      const { error: err } = await supabase.from('courses').delete().eq('id', id)
-
+      const { error: err } = await deleteCourse(id)
       if (err) throw err
       courses.value = courses.value.filter((c) => c.id !== id)
       return true
@@ -137,9 +118,10 @@ export const useCoursesStore = defineStore('courses', () => {
     loading,
     error,
     fetchCourses,
+    fetchAdminCourses,
     fetchCourseById,
-    createCourse,
-    updateCourse,
-    deleteCourse,
+    createCourse: createCourseAction,
+    updateCourse: updateCourseAction,
+    deleteCourse: deleteCourseAction,
   }
 })

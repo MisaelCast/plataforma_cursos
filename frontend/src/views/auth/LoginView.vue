@@ -6,16 +6,16 @@
 </template>
 
 <script setup>
-import { supabase } from '../../lib/supabase'
+import { supabase } from '@/services/supabase'
 
 async function loginConGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: `${window.location.origin}/auth/callback`,
-    queryParams: {
-        prompt: 'select_account' // siempre muestra el selector de cuenta
-      }
+      queryParams: {
+        prompt: 'select_account', // siempre muestra el selector de cuenta
+      },
     },
   })
   if (error) console.error(error.message)
