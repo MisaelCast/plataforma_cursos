@@ -1,21 +1,21 @@
 <template>
   <div
     class="h-screen flex flex-col overflow-hidden"
-    style="background: #0f0f0f; font-family: 'Manrope', system-ui, sans-serif"
+    style="background: #fff; font-family: 'Manrope', system-ui, sans-serif"
   >
     <!-- ── Top Bar ── -->
     <header
       class="flex items-center justify-between px-6 py-3 flex-shrink-0"
-      style="background: #111; border-bottom: 1px solid #222"
+      style="background: #fff; border-bottom: 1px solid #e5e7eb"
     >
       <!-- Izquierda: ícono + título + progreso -->
       <div class="flex items-center gap-4 min-w-0">
         <!-- Triángulo + título -->
         <div class="flex items-center gap-2 min-w-0">
-          <svg class="w-4 h-4 text-white flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <svg class="w-4 h-4 text-gray-800 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L22 20H2L12 2z" />
           </svg>
-          <span class="text-white text-sm font-semibold truncate">{{
+          <span class="text-gray-800 text-sm font-semibold truncate">{{
             course?.title || 'Cargando...'
           }}</span>
         </div>
@@ -35,8 +35,8 @@
         >
           {{ authStore.userName?.charAt(0) }}
         </div>
-        <span class="text-gray-300 text-sm">{{ authStore.userName?.split(' ')[0] }}</span>
-        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span class="text-gray-700 text-sm">{{ authStore.userName?.split(' ')[0] }}</span>
+        <svg class="w-4 h-4 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path d="M6 9l6 6 6-6" stroke-width="1.5" stroke-linecap="round" />
         </svg>
       </div>
@@ -48,8 +48,8 @@
       <transition name="sidebar">
         <div
           v-show="showSidebar"
-          class="w-72 flex flex-col flex-shrink-0 overflow-hidden"
-          style="background: #1a1a1a; border-right: 1px solid #2a2a2a"
+          class="w-72 flex flex-col flex-shrink-0 overflow-hidden m-3 rounded-2xl"
+          style="background: #1a1a1a; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18)"
         >
           <!-- Header sidebar -->
           <div
@@ -227,29 +227,33 @@
             <!-- ── Video ── -->
             <div
               v-if="currentLesson.youtube_url"
-              class="w-full bg-black rounded-xl overflow-hidden mx-8 mt-6"
-              style="aspect-ratio: 16/9; max-height: 55vh"
+              class="rounded-xl overflow-hidden mx-auto mt-6 max-w-5xl w-auto"
             >
-              <iframe
-                :src="youtubeEmbedUrl"
-                class="w-full h-full"
-                frameborder="0"
-                allow="
-                  accelerometer;
-                  autoplay;
-                  clipboard-write;
-                  encrypted-media;
-                  gyroscope;
-                  picture-in-picture;
-                "
-                allowfullscreen
-              />
+              <div
+                class="w-full bg-black rounded-2xl overflow-hidden shadow-2xl"
+                style="height: 65vh"
+              >
+                <iframe
+                  :src="youtubeEmbedUrl"
+                  class="w-full h-full"
+                  frameborder="0"
+                  allow="
+                    accelerometer;
+                    autoplay;
+                    clipboard-write;
+                    encrypted-media;
+                    gyroscope;
+                    picture-in-picture;
+                  "
+                  allowfullscreen
+                />
+              </div>
             </div>
 
             <!-- Solo PDF -->
             <div
               v-else-if="currentLesson.pdf_url && !currentLesson.youtube_url"
-              class="w-full rounded-xl overflow-hidden mx-8 mt-6"
+              class="rounded-xl overflow-hidden mt-6 max-w-5xl mx-auto w-auto"
               style="height: 65vh; background: #111"
             >
               <iframe
@@ -265,7 +269,7 @@
             </div>
 
             <!-- ── Info debajo del video ── -->
-            <div class="px-8 pt-10 pb-10">
+            <div class="px-8 pt-7 pb-10 max-w-5xl mx-auto w-full">
               <!-- Título + descripción -->
               <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ currentLesson.title }}</h1>
               <p class="text-gray-500 text-sm mb-5">

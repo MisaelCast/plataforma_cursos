@@ -1,44 +1,62 @@
-# frontend
+# Plataforma de Cursos
 
-This template should help get you started developing with Vue 3 in Vite.
+> **Estado del proyecto: En desarrollo activo** 🚧
 
-## Recommended IDE Setup
+Plataforma de cursos en líneA construida desde cero como proyecto personal. El sistema permite a usuarios registrarse, explorar cursos, inscribirse y avanzar a través de lecciones con seguimiento de progreso.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+---
 
-## Recommended Browser Setup
+## 🔧 Stack Tecnológico
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+| Capa                 | Tecnología                          |
+| -------------------- | ----------------------------------- |
+| Frontend             | Vue 3, Vite, Pinia, Tailwind CSS v4 |
+| Backend              | Node.js / Express                   |
+| Base de datos & Auth | Supabase (PostgreSQL + RLS + OAuth) |
+| Almacenamiento       | Supabase Storage · Cloudflare R2    |
+| Video                | YouTube (unlisted)                  |
 
-## Customize configuration
+---
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## ✅ Progreso actual
 
-## Project Setup
+- [x] Esquema de base de datos con RLS y triggers
+- [x] Autenticación con Google OAuth
+- [x] Panel de administración (cursos, secciones, lecciones)
+- [x] Catálogo público y detalle de curso
+- [x] Reproductor de lecciones (video, PDF, Markdown)
+- [x] Seguimiento de progreso por lección
+- [x] Sistema de quizzes (opción múltiple, V/F, respuesta corta)
+- [ ] Subida de archivos vía backend (en progreso)
+- [ ] Pulido de UI con shadcn-vue
+- [ ] Despliegue del backend
 
-```sh
-npm install
+---
+
+## 🚀 MVP
+
+El MVP es un sistema de **acceso libre** (sin pagos). El administrador crea y gestiona el contenido; los usuarios registrados son los estudiantes.
+
+---
+
+## 📁 Estructura del proyecto
+
+```
+plataforma_cursos/
+├── src/
+│   ├── views/
+│   ├── components/
+│   ├── stores/
+│   └── router/
+├── server/
+├── supabase/
+│   ├── schema.sql
+│   ├── policies.sql
+│   ├── storage-policies.sql
+│   └── quiz.sql
+└── ...
 ```
 
-### Compile and Hot-Reload for Development
+---
 
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+> Este proyecto está en construcción. La documentación completa se irá añadiendo conforme avance el desarrollo.
