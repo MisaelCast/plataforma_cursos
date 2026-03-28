@@ -190,23 +190,12 @@
           </div>
 
           <!-- Footer: progreso -->
+
           <div
             class="px-4 py-4 flex-shrink-0"
             style="border-top: 1px solid #2a2a2a; background: #1a1a1a"
           >
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-gray-400 text-xs font-medium">Course Progress</span>
-              <span class="text-gray-300 text-xs font-semibold"
-                >{{ progressPercent }}% Complete</span
-              >
-            </div>
-            <div class="w-full h-1 rounded-full overflow-hidden" style="background: #333">
-              <div
-                class="h-full rounded-full transition-all duration-500"
-                style="background: #3b82f6"
-                :style="{ width: `${progressPercent}%` }"
-              />
-            </div>
+            <ProgressBar :value="progressPercent" />
           </div>
         </div>
       </transition>
@@ -692,6 +681,7 @@ import { supabase } from '@/services/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { marked } from 'marked'
 import { useQuizStore } from '../stores/quiz'
+import ProgressBar from '../components/ProgressBar.vue'
 
 const quizStore = useQuizStore()
 
