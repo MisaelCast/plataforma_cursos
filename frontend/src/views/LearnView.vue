@@ -10,6 +10,17 @@
     >
       <!-- Izquierda: ícono + título + progreso -->
       <div class="flex items-center gap-4 min-w-0">
+        <!-- Flecha volver -->
+
+        <router-link
+          :to="`/cursos/${course?.slug}`"
+          class="text-gray-500 hover:text-black transition-colors flex-shrink-0"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M15 19l-7-7 7-7" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </router-link>
+
         <!-- Triángulo + título -->
         <div class="flex items-center gap-2 min-w-0">
           <svg class="w-4 h-4 text-gray-800 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -49,7 +60,7 @@
         <div
           v-show="showSidebar"
           class="w-72 flex flex-col flex-shrink-0 overflow-hidden m-3 rounded-2xl"
-          style="background: #1a1a1a; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18)"
+          style="background: #111; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18)"
         >
           <!-- Header sidebar -->
           <div
@@ -216,272 +227,381 @@
 
         <div class="flex-1 overflow-y-auto">
           <!-- Sin lección -->
-          <div
-            v-if="!currentLesson"
-            class="flex-1 flex items-center justify-center h-full text-gray-400"
-          >
+          <div v-if="!currentLesson" class="flex items-center justify-center h-full text-gray-400">
             Selecciona una lección para comenzar
           </div>
 
           <div v-else>
-            <!-- ── Video ── -->
-            <div
-              v-if="currentLesson.youtube_url"
-              class="rounded-xl overflow-hidden mx-auto mt-6 max-w-5xl w-auto"
-            >
+            <!-- ── Quiz ── -->
+            <div v-if="currentLesson.lesson_type === 'quiz'" class="max-w-3xl mx-auto px-8 py-10">
+              <!-- Ya completó el quiz — muestra resultado -->
+              <div v-if="quizSubmitted" class="text-center py-12">
+                <div class="text-6xl mb-4">
+                  {{ quizScore >= quizTotal * 0.7 ? '🎉' : '📚' }}
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                  {{ quizScore >= quizTotal * 0.7 ? '¡Bien hecho!' : 'Sigue practicando' }}
+                </h2>
+                <p class="text-gray-500 mb-6">
+                  Obtuviste
+                  <strong class="text-indigo-600">{{ quizScore }} de {{ quizTotal }}</strong>
+                  respuestas correctas ({{ Math.round((quizScore / quizTotal) * 100) }}%)
+                </p>
+
+                <!-- Historial de intentos -->
+                <div v-if="quizStore.results.length > 0" class="mb-8 text-left">
+                  <h3 class="font-semibold text-gray-700 mb-3 text-sm">Historial de intentos</h3>
+                  <div class="space-y-2">
+                    <div
+                      v-for="(result, i) in quizStore.results"
+                      :key="result.id"
+                      class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm"
+                    >
+                      <span class="text-gray-500">Intento {{ quizStore.results.length - i }}</span>
+                      <span
+                        class="font-medium"
+                        :class="
+                          result.score >= result.total * 0.7 ? 'text-green-600' : 'text-orange-500'
+                        "
+                      >
+                        {{ result.score }}/{{ result.total }} ({{
+                          Math.round((result.score / result.total) * 100)
+                        }}%)
+                      </span>
+                      <span class="text-gray-400 text-xs">{{ formatDate(result.created_at) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  @click="retryQuiz"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm transition-colors cursor-pointer"
+                >
+                  Intentar de nuevo
+                </button>
+              </div>
+
+              <!-- Quiz activo -->
+              <div v-else>
+                <h2 class="text-xl font-bold text-gray-900 mb-6">{{ currentLesson.title }}</h2>
+
+                <!-- Sin preguntas -->
+                <div
+                  v-if="quizStore.questions.length === 0"
+                  class="text-center text-gray-400 py-12"
+                >
+                  Este quiz no tiene preguntas todavía.
+                </div>
+
+                <!-- Preguntas -->
+                <div v-else class="space-y-6">
+                  <div
+                    v-for="(question, index) in quizStore.questions"
+                    :key="question.id"
+                    class="bg-white border border-gray-200 rounded-xl p-6"
+                  >
+                    <p class="font-medium text-gray-800 mb-4">
+                      <span class="text-gray-400 mr-2">{{ index + 1 }}.</span>
+                      {{ question.question }}
+                    </p>
+
+                    <!-- Opciones múltiple y verdadero/falso -->
+                    <div v-if="question.type !== 'short'" class="space-y-2">
+                      <label
+                        v-for="option in question.quiz_options"
+                        :key="option.id"
+                        class="flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors"
+                        :class="
+                          quizAnswers[question.id] === option.id
+                            ? 'border-indigo-400 bg-indigo-50'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        "
+                      >
+                        <input
+                          type="radio"
+                          :name="question.id"
+                          :value="option.id"
+                          v-model="quizAnswers[question.id]"
+                          class="accent-indigo-600"
+                        />
+                        <span class="text-sm text-gray-700">{{ option.text }}</span>
+                      </label>
+                    </div>
+
+                    <!-- Respuesta corta -->
+                    <div v-else>
+                      <input
+                        v-model="quizAnswers[question.id]"
+                        type="text"
+                        placeholder="Escribe tu respuesta..."
+                        class="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Error -->
+                  <div v-if="quizError" class="text-red-500 text-sm text-center">
+                    {{ quizError }}
+                  </div>
+
+                  <!-- Botón enviar -->
+                  <button
+                    @click="submitQuiz"
+                    :disabled="quizStore.loading"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-medium py-3 rounded-xl transition-colors cursor-pointer"
+                  >
+                    {{ quizStore.loading ? 'Enviando...' : 'Enviar respuestas' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Contenido normal (video, pdf, texto) ── -->
+            <div v-else>
+              <!-- Video -->
               <div
-                class="w-full bg-black rounded-2xl overflow-hidden shadow-2xl"
-                style="height: 65vh"
+                v-if="currentLesson.youtube_url"
+                class="rounded-xl overflow-hidden mx-auto mt-4 max-w-5xl w-auto"
+              >
+                <div
+                  class="w-full bg-black rounded-2xl overflow-hidden shadow-2xl"
+                  style="height: 65vh"
+                >
+                  <iframe
+                    :src="youtubeEmbedUrl"
+                    class="w-full h-full"
+                    frameborder="0"
+                    allow="
+                      accelerometer;
+                      autoplay;
+                      clipboard-write;
+                      encrypted-media;
+                      gyroscope;
+                      picture-in-picture;
+                    "
+                    allowfullscreen
+                  />
+                </div>
+              </div>
+
+              <!-- Solo PDF -->
+              <div
+                v-else-if="currentLesson.pdf_url && !currentLesson.youtube_url"
+                class="rounded-xl overflow-hidden mt-4 max-w-5xl mx-auto w-auto"
+                style="height: 65vh; background: #111"
               >
                 <iframe
-                  :src="youtubeEmbedUrl"
+                  :src="`https://docs.google.com/viewer?url=${encodeURIComponent(currentLesson.pdf_url)}&embedded=true`"
                   class="w-full h-full"
                   frameborder="0"
-                  allow="
-                    accelerometer;
-                    autoplay;
-                    clipboard-write;
-                    encrypted-media;
-                    gyroscope;
-                    picture-in-picture;
-                  "
-                  allowfullscreen
                 />
               </div>
-            </div>
 
-            <!-- Solo PDF -->
-            <div
-              v-else-if="currentLesson.pdf_url && !currentLesson.youtube_url"
-              class="rounded-xl overflow-hidden mt-6 max-w-5xl mx-auto w-auto"
-              style="height: 65vh; background: #111"
-            >
-              <iframe
-                :src="`https://docs.google.com/viewer?url=${encodeURIComponent(currentLesson.pdf_url)}&embedded=true`"
-                class="w-full h-full"
-                frameborder="0"
-              />
-            </div>
+              <!-- ── Info debajo del video ── -->
+              <div class="px-8 pt-7 pb-10 max-w-5xl mx-auto w-full">
+                <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ currentLesson.title }}</h1>
+                <p class="text-gray-500 text-sm mb-5">
+                  {{
+                    currentLesson.description || 'Aprende los conceptos esenciales de esta lección.'
+                  }}
+                </p>
 
-            <!-- Texto Markdown (no tiene video) -->
-            <div v-else-if="currentLesson.lesson_type === 'text'" class="px-8 pt-8">
-              <!-- sin video, muestra contenido directo -->
-            </div>
-
-            <!-- ── Info debajo del video ── -->
-            <div class="px-8 pt-7 pb-10 max-w-5xl mx-auto w-full">
-              <!-- Título + descripción -->
-              <h1 class="text-2xl font-bold text-gray-900 mb-1">{{ currentLesson.title }}</h1>
-              <p class="text-gray-500 text-sm mb-5">
-                {{
-                  currentLesson.description || 'Aprende los conceptos esenciales de esta lección.'
-                }}
-              </p>
-
-              <!-- Tabs + botones -->
-              <div
-                class="flex items-center justify-between"
-                style="border-bottom: 1px solid #e5e7eb"
-              >
-                <div class="flex gap-0">
-                  <button
-                    v-for="tab in tabs"
-                    :key="tab.id"
-                    @click="activeTab = tab.id"
-                    class="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer border-b-2 -mb-px"
-                    :class="
-                      activeTab === tab.id
-                        ? 'text-gray-900 border-gray-900'
-                        : 'text-gray-400 hover:text-gray-600 border-transparent'
-                    "
-                  >
-                    <!-- Ícono por tab -->
-                    <svg
-                      v-if="tab.id === 'contenido'"
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <rect x="3" y="3" width="7" height="7" rx="1" stroke-width="1.5" />
-                      <rect x="14" y="3" width="7" height="7" rx="1" stroke-width="1.5" />
-                      <rect x="3" y="14" width="7" height="7" rx="1" stroke-width="1.5" />
-                      <rect x="14" y="14" width="7" height="7" rx="1" stroke-width="1.5" />
-                    </svg>
-                    <svg
-                      v-else-if="tab.id === 'recursos'"
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M9 12h6M9 16h6M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                      />
-                    </svg>
-                    <svg
-                      v-else-if="tab.id === 'notas'"
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                      />
-                    </svg>
-                    {{ tab.label }}
-                    <span
-                      v-if="tab.id === 'recursos' && currentLesson.pdf_url"
-                      class="text-xs px-1.5 py-0.5 rounded-full font-semibold"
-                      style="background: #f3f4f6; color: #6b7280"
-                      >1</span
-                    >
-                  </button>
-                </div>
-
-                <!-- Acciones derecha -->
-                <div class="flex items-center gap-3 pb-px">
-                  <button
-                    class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    @click="toggleComplete"
-                    :disabled="completing"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                    :style="
-                      isCompleted
-                        ? 'background: #16a34a; color: white;'
-                        : 'background: #111827; color: white;'
-                    "
-                  >
-                    <svg
-                      v-if="isCompleted"
-                      class="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2.5"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                    {{ isCompleted ? 'Completed' : 'Mark as Complete' }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- ── Contenido de tabs + Resources flotante ── -->
-              <div class="flex gap-6 mt-6">
-                <!-- Contenido del tab -->
-                <div class="flex-1 min-w-0">
-                  <!-- Tab: Contenido -->
-                  <div v-if="activeTab === 'contenido'">
-                    <!-- Si es lección de texto, muestra el markdown -->
-                    <div
-                      v-if="currentLesson.lesson_type === 'text' && currentLesson.content"
-                      class="prose prose-gray prose-sm max-w-none"
-                      v-html="renderMarkdown(currentLesson.content)"
-                    />
-                    <!-- Si tiene descripción/content como texto plano -->
-                    <p
-                      v-else-if="currentLesson.content"
-                      class="text-gray-600 text-sm leading-relaxed whitespace-pre-line"
-                    >
-                      {{ currentLesson.content }}
-                    </p>
-                    <p v-else class="text-gray-400 text-sm italic">
-                      Esta lección no tiene descripción adicional.
-                    </p>
-                  </div>
-
-                  <!-- Tab: Recursos -->
-                  <div v-else-if="activeTab === 'recursos'">
-                    <div
-                      v-if="currentLesson.pdf_url"
-                      class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
-                      <div class="flex items-center gap-3">
-                        <div
-                          class="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style="background: #fee2e2"
-                        >
-                          <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p class="text-sm font-medium text-gray-800">Material de la lección</p>
-                          <p class="text-xs text-gray-400">Archivo PDF</p>
-                        </div>
-                      </div>
-                      <a
-                        :href="currentLesson.pdf_url"
-                        target="_blank"
-                        class="text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                          />
-                        </svg>
-                      </a>
-                    </div>
-                    <p v-else class="text-gray-400 text-sm italic">
-                      No hay recursos en esta lección.
-                    </p>
-                  </div>
-
-                  <!-- Tab: Notas -->
-                  <div v-else-if="activeTab === 'notas'">
-                    <p class="text-gray-400 text-sm italic">
-                      Las notas estarán disponibles próximamente.
-                    </p>
-                  </div>
-
-                  <!-- Tab: Quiz -->
-                  <div v-else-if="activeTab === 'quiz'">
-                    <p class="text-gray-400 text-sm italic">
-                      El quiz estará disponible próximamente.
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Panel Resources flotante (solo si tiene PDF y tab es contenido) -->
+                <!-- Tabs + botones -->
                 <div
-                  v-if="currentLesson.pdf_url && activeTab === 'contenido'"
-                  class="w-64 flex-shrink-0"
+                  class="flex items-center justify-between"
+                  style="border-bottom: 1px solid #e5e7eb"
                 >
-                  <div class="rounded-xl p-4" style="border: 1px solid #e5e7eb">
-                    <div class="flex items-center justify-between mb-4">
-                      <span class="text-sm font-semibold text-gray-800">Resources</span>
-                      <button class="text-gray-400 hover:text-gray-600 cursor-pointer">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                          <circle cx="5" cy="12" r="1.5" />
-                          <circle cx="12" cy="12" r="1.5" />
-                          <circle cx="19" cy="12" r="1.5" />
-                        </svg>
-                      </button>
+                  <div class="flex gap-0">
+                    <button
+                      v-for="tab in tabs"
+                      :key="tab.id"
+                      @click="activeTab = tab.id"
+                      class="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer border-b-2 -mb-px"
+                      :class="
+                        activeTab === tab.id
+                          ? 'text-gray-900 border-gray-900'
+                          : 'text-gray-400 hover:text-gray-600 border-transparent'
+                      "
+                    >
+                      <svg
+                        v-if="tab.id === 'contenido'"
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <rect x="3" y="3" width="7" height="7" rx="1" stroke-width="1.5" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" stroke-width="1.5" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" stroke-width="1.5" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" stroke-width="1.5" />
+                      </svg>
+                      <svg
+                        v-else-if="tab.id === 'recursos'"
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M9 12h6M9 16h6M17 21H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                      <svg
+                        v-else-if="tab.id === 'notas'"
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                      {{ tab.label }}
+                      <span
+                        v-if="tab.id === 'recursos' && currentLesson.pdf_url"
+                        class="text-xs px-1.5 py-0.5 rounded-full font-semibold"
+                        style="background: #f3f4f6; color: #6b7280"
+                        >1</span
+                      >
+                    </button>
+                  </div>
+
+                  <!-- Acciones derecha -->
+                  <div class="flex items-center gap-3 pb-px">
+                    <button
+                      class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          stroke-width="1.5"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      @click="toggleComplete"
+                      :disabled="completing"
+                      class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                      :style="
+                        isCompleted
+                          ? 'background: #16a34a; color: white;'
+                          : 'background: #111827; color: white;'
+                      "
+                    >
+                      <svg
+                        v-if="isCompleted"
+                        class="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2.5"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      {{ isCompleted ? 'Completed' : 'Mark as Complete' }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Contenido de tabs -->
+                <div class="flex gap-6 mt-6">
+                  <div class="flex-1 min-w-0">
+                    <!-- Tab: Contenido -->
+                    <div v-if="activeTab === 'contenido'">
+                      <div
+                        v-if="currentLesson.lesson_type === 'text' && currentLesson.content"
+                        class="prose prose-gray prose-sm max-w-none"
+                        v-html="renderMarkdown(currentLesson.content)"
+                      />
+                      <p
+                        v-else-if="currentLesson.content"
+                        class="text-gray-600 text-sm leading-relaxed whitespace-pre-line"
+                      >
+                        {{ currentLesson.content }}
+                      </p>
+                      <p v-else class="text-gray-400 text-sm italic">
+                        Esta lección no tiene descripción adicional.
+                      </p>
                     </div>
-                    <div class="space-y-3">
+
+                    <!-- Tab: Recursos -->
+                    <div v-else-if="activeTab === 'recursos'">
+                      <div
+                        v-if="currentLesson.pdf_url"
+                        class="flex items-center justify-between p-4 rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors"
+                      >
+                        <div class="flex items-center gap-3">
+                          <div
+                            class="w-10 h-10 rounded-lg flex items-center justify-center"
+                            style="background: #fee2e2"
+                          >
+                            <svg
+                              class="w-5 h-5 text-red-500"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <p class="text-sm font-medium text-gray-800">Material de la lección</p>
+                            <p class="text-xs text-gray-400">Archivo PDF</p>
+                          </div>
+                        </div>
+                        <a
+                          :href="currentLesson.pdf_url"
+                          target="_blank"
+                          class="text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                              stroke-width="1.5"
+                              stroke-linecap="round"
+                            />
+                          </svg>
+                        </a>
+                      </div>
+                      <p v-else class="text-gray-400 text-sm italic">
+                        No hay recursos en esta lección.
+                      </p>
+                    </div>
+
+                    <!-- Tab: Notas -->
+                    <div v-else-if="activeTab === 'notas'">
+                      <p class="text-gray-400 text-sm italic">
+                        Las notas estarán disponibles próximamente.
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Panel Resources flotante -->
+                  <div
+                    v-if="currentLesson.pdf_url && activeTab === 'contenido'"
+                    class="w-64 flex-shrink-0"
+                  >
+                    <div class="rounded-xl p-4" style="border: 1px solid #e5e7eb">
+                      <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm font-semibold text-gray-800">Resources</span>
+                      </div>
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                           <div
@@ -527,35 +647,35 @@
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Navegación entre lecciones -->
-              <div
-                class="flex items-center justify-between mt-8 pt-4"
-                style="border-top: 1px solid #f3f4f6"
-              >
-                <button
-                  @click="prevLesson"
-                  :disabled="!hasPrev"
-                  class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-30"
-                  style="border: 1px solid #e5e7eb; color: #374151"
+                <!-- Navegación entre lecciones -->
+                <div
+                  class="flex items-center justify-between mt-8 pt-4"
+                  style="border-top: 1px solid #f3f4f6"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M15 19l-7-7 7-7" stroke-width="1.5" stroke-linecap="round" />
-                  </svg>
-                  Anterior
-                </button>
-                <button
-                  @click="nextLesson"
-                  :disabled="!hasNext"
-                  class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-30"
-                  style="border: 1px solid #e5e7eb; color: #374151"
-                >
-                  Siguiente
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M9 5l7 7-7 7" stroke-width="1.5" stroke-linecap="round" />
-                  </svg>
-                </button>
+                  <button
+                    @click="prevLesson"
+                    :disabled="!hasPrev"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-30"
+                    style="border: 1px solid #e5e7eb; color: #374151"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M15 19l-7-7 7-7" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                    Anterior
+                  </button>
+                  <button
+                    @click="nextLesson"
+                    :disabled="!hasNext"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-30"
+                    style="border: 1px solid #e5e7eb; color: #374151"
+                  >
+                    Siguiente
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M9 5l7 7-7 7" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -566,11 +686,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/services/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { marked } from 'marked'
+import { useQuizStore } from '../stores/quiz'
+
+const quizStore = useQuizStore()
+
+// ── Quiz ──
+const quizAnswers = ref({}) // respuestas del estudiante { questionId: optionId }
+const quizSubmitted = ref(false)
+const quizScore = ref(0)
+const quizTotal = ref(0)
+const quizError = ref(null)
 
 const route = useRoute()
 const router = useRouter()
@@ -726,6 +856,73 @@ async function toggleComplete() {
     completedLessons.value.push(lessonId)
   }
   completing.value = false
+}
+
+// Carga el quiz cuando se selecciona una lección de tipo quiz
+watch(currentLesson, async (lesson) => {
+  if (!lesson || lesson.lesson_type !== 'quiz') return
+
+  quizSubmitted.value = false
+  quizAnswers.value = {}
+  quizError.value = null
+  await quizStore.fetchQuestions(lesson.id)
+  await quizStore.fetchResults(authStore.session.user.id, lesson.id)
+})
+
+// Envía las respuestas del quiz
+async function submitQuiz() {
+  quizError.value = null
+  const questions = quizStore.questions
+
+  // Verifica que todas las preguntas estén respondidas
+  const unanswered = questions.filter((q) => !quizAnswers.value[q.id])
+  if (unanswered.length > 0) {
+    quizError.value = `Faltan ${unanswered.length} pregunta(s) por responder`
+    return
+  }
+
+  // Calcula el puntaje
+  let score = 0
+  questions.forEach((question) => {
+    if (question.type === 'short') {
+      // Respuesta corta siempre cuenta como correcta (revisión manual)
+      score++
+    } else {
+      const selectedOptionId = quizAnswers.value[question.id]
+      const correctOption = question.quiz_options.find((o) => o.is_correct)
+      if (correctOption && selectedOptionId === correctOption.id) score++
+    }
+  })
+
+  quizScore.value = score
+  quizTotal.value = questions.length
+
+  // Guarda el resultado
+  await quizStore.saveResult(
+    authStore.session.user.id,
+    currentLesson.value.id,
+    score,
+    questions.length,
+    quizAnswers.value,
+  )
+
+  quizSubmitted.value = true
+}
+
+// Reinicia el quiz para intentarlo de nuevo
+function retryQuiz() {
+  quizSubmitted.value = false
+  quizAnswers.value = {}
+  quizError.value = null
+}
+
+// Formatea fecha para el historial
+function formatDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString('es-MX', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 </script>
 
